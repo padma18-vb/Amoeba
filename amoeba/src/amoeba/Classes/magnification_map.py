@@ -68,7 +68,7 @@ class MagnificationMap:
             OmM=OmM,
             little_h=self.little_h,
         )
-
+        print('einstein radius in m:', self.einstein_radius_in_meters)
         # support opening stored magnification maps
         if isinstance(magnification_array, (np.ndarray, list)):
             if np.ndim(magnification_array) == 1:
@@ -100,6 +100,7 @@ class MagnificationMap:
             * self.total_microlens_einstein_radii
             / self.resolution
         )
+        print(self.pixel_size)
         self.pixel_shift = 0
 
     def convolve_with_flux_projection(
