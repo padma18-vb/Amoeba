@@ -742,6 +742,7 @@ def perform_microlensing_convolution(
         * (number_of_smbh_gravitational_radii * gravitational_radius_of_smbh)
         / np.size(flux_array, 0)
     )
+    # print(pixel_size_flux_array)
 
     pixel_size_magnification_array = (
         number_of_microlens_einstein_radii
@@ -754,8 +755,10 @@ def perform_microlensing_convolution(
         )
     ) / np.size(magnification_array, 0)
 
+    # print('pixel_size_flux_array: ',pixel_size_flux_array)
+    # print('pixel_size_magnification_array: ', pixel_size_magnification_array)
     pixel_ratio = pixel_size_flux_array / pixel_size_magnification_array
-
+    # print('pixel_ratio: ', pixel_ratio)
     flux_array_rescaled = rescale(flux_array, pixel_ratio)
     new_total_flux = np.sum(flux_array_rescaled)
 
@@ -825,6 +828,7 @@ def extract_light_curve(
 
     # check convolution if the map was large enough. Otherwise return original total flux.
     # Note the convolution should be weighted by the square of the pixel shift to conserve flux.
+    # print(np.size(convolution_array,0)/2)
     if pixel_shift >= np.size(convolution_array, 0) / 2:
         print(
             "warning, flux projection too large for this magnification map. Returning average flux."
@@ -919,6 +923,7 @@ def extract_light_curve(
                 safe_convolution_array, x_positions[position], y_positions[position]
             )
         )
+    # print(angle)
     if return_track_coords:
         return (
             np.asarray(light_curve),
@@ -1386,7 +1391,7 @@ def calculate_microlensed_transfer_function(
         weights=np.nan_to_num(rescale(magnified_response_array, 10)),
         density=True,
     )[0]
-
+    # print(x_position, y_position)
     # return the normalized transfer function
     return np.nan_to_num(
         microlensed_transfer_function / np.sum(microlensed_transfer_function)
@@ -1394,13 +1399,13 @@ def calculate_microlensed_transfer_function(
 
 
 def generate_drw_signal(
-    length_of_light_curve, time_step, sf_infinity, tau_drw, random_seed=None
+    length_of_light_curve, time_step, sf_infinity, tau_drw, random_seed=None,normalize=False
 ):
     """Generate a damped random walk using typical parameters as defined in Kelly+ 2009.
     Uses recursion.
 
     :param length_of_light_curve: the length of the light curve
-    :param time_step: the spacing of the light curve, in identical units to maximum_time
+    :param time_step: the spacing of the light curve, in identical units to length_of_light_curve
     :param sf_infinity: the asymptotic structure function of the damped random walk
     :param tau_drw: the characteristic time scale of the variability
     :param random_seed: random seed to use for reproducibility
@@ -1425,8 +1430,9 @@ def generate_drw_signal(
     output_drw = output_drw[int(number_of_points // 2) :]
 
     # normalize to mean zero, standard deviation one
-    output_drw -= np.mean(output_drw)
-    output_drw /= np.std(output_drw)
+    if normalize:
+        output_drw -= np.mean(output_drw)
+        output_drw /= np.std(output_drw)
 
     return output_drw
 
@@ -1546,11 +1552,12 @@ def generate_snapshots_of_radiation_pattern(
     # convert time lags from R_g / c to units of days
     time_lag_array *= gr_per_day
     maximum_time_lag_in_days = np.max(time_lag_array)
-
+    # print('maximum time lag in days:c', maximum_time_lag_in_days)
     # normalize response_array because we want a fractional response w.r.t. the static_flux array
 
-    response_array *= total_static_flux / np.sum(response_array)
-
+    # response_array *= total_static_flux / np.sum(response_array)
+    # unnormalized flux
+    response_array *= total_static_flux
     if len(driving_signal) < np.max(time_stamps + maximum_time_lag_in_days):
         print(
             "warning, driving signal is not long enough to support all snapshots. looping signal"
@@ -1936,7 +1943,7 @@ def convolve_signal_with_transfer_function(
     :param desired_cadence_in_days: desired sampling of the output signal in units days
     :return: reprocessed signal at daily cadence
     """
-
+    # desired_cadence_in_days -- multiple observations in one day
     # this is the resolution of the transfer function
     gravitational_radius = calculate_gravitational_radius(10**smbh_mass_exp)
 
@@ -1944,6 +1951,7 @@ def convolve_signal_with_transfer_function(
     light_travel_time_for_grav_rad = (
         gravitational_radius / const.c.to(u.m / u.day).value
     )
+    # so this has to be in days
 
     # determine how many points per day need to be calculated
     required_hyper_resolution = (1 + redshift_source) / min(desired_cadence_in_days, 1)
@@ -1962,6 +1970,7 @@ def convolve_signal_with_transfer_function(
         max(initial_time_axis),
         int(max(initial_time_axis) * required_hyper_resolution),
     )
+    # should this be len and not max? no: max lets us feed in the time
 
     # resample the transfer function at required cadence
     tau_axis = np.linspace(
