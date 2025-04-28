@@ -66,6 +66,9 @@ class FluxProjection:
         )
 
     def get_plotting_axes(self):
+        '''
+        Get you the axes in physical 
+        '''
         xax = np.linspace(
             -self.r_out_in_gravitational_radii,
             self.r_out_in_gravitational_radii,

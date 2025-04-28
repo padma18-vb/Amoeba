@@ -329,6 +329,27 @@ class AccretionDisk:
         axis_offset_in_gravitational_radii=0,
         angle_offset_in_degrees=0,
     ):
+        """Method to generate snapshots of the accretion disk's surface brightness under
+        the assumption that a driving signal is actively being reprocessed.
+
+        :param observer_frame_wavelength_in_nm: Wavelength in nm in the observer's frame
+            which we are observing the source at
+        :param time_stamps: 1d array or list of times to pull the snapshots at
+        :param driving_signal: 1d array or list representing the driving light curve
+        :param driving_signal_fractional_strength: float representing how strong the
+            reprocessed signal is with respect to the continuum emission
+        :param corona_height: None or int/float. If None, the initialized corona height
+            will be used. Otherwise, represents the height of the flare in units R_g =
+            GM/c^2
+        :param axis_offset_in_gravitational_radii: Axis offset of the flaring event in
+            units R_g = GM/c^2
+        :param angle_offset_in_gravitational_radii: Degree rotation around the axis of
+            symmetry of the flaring event. Zero degrees represents the flare nearer to
+            the observer for inclined disks, while 180 degrees represnts the far side of
+            the accretion disk
+        :return: a list of snapshots of the accretion disk at each time step. Note that
+            this is an experimental method.
+        """
 
         rest_frame_wavelength_in_nm = (
             observer_frame_wavelength_in_nm / (1 + self.redshift_source) / self.g_array
@@ -355,8 +376,24 @@ class AccretionDisk:
             self.albedo_array,
         )
 
-        return radiation_patterns
+        radiation_patterns_flux_projections = []
 
+        for current_pattern in radiation_patterns:
+            current_projection = FluxProjection(
+                current_pattern,
+                observer_frame_wavelength_in_nm,
+                self.smbh_mass_exp,
+                self.redshift_source,
+                self.r_out_in_gravitational_radii,
+                self.inclination_angle,
+                OmM=self.OmM,
+                H0=self.H0,
+            )
+
+            radiation_patterns_flux_projections.append(current_projection)
+
+        return radiation_patterns_flux_projections
+    
     def get_plotting_axes(self):
 
         x_ax = np.linspace(

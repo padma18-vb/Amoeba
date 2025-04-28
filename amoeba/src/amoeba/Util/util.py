@@ -767,7 +767,7 @@ def perform_microlensing_convolution(
 
     if return_preconvolution_info:
         return flux_array_rescaled
-
+    # print(flux_array.shape, np.size(flux_array_rescaled, 0), np.shape(magnification_array))
     dummy_map = np.zeros(np.shape(magnification_array))
     dummy_map[: np.size(flux_array_rescaled, 0), : np.size(flux_array_rescaled, 1)] = (
         flux_array_rescaled
@@ -931,6 +931,143 @@ def extract_light_curve(
             y_positions + pixel_shift,
         )
     return np.asarray(light_curve)
+
+def extract_path_on_microlensing_map(
+    convolution_array,
+    pixel_size,
+    effective_transverse_velocity,
+    light_curve_time_in_years,
+    pixel_shift=0,
+    x_start_position=None,
+    y_start_position=None,
+    phi_travel_direction=None,
+    random_seed=None,
+):
+    """Extracts a light curve from the convolution between two arrays by selecting a
+    trajectory and calling pull_value_from_grid at each relevant point.
+
+    :param convolution_array: The convolution between a flux distribtion and the
+        magnification array due to microlensing. Note coordinates on arrays have (y, x)
+        signature.
+    :param pixel_size: Physical size of a pixel in the source plane, in meters
+    :param effective_transverse_velocity: effective transverse velocity in the source
+        plane, in km / s
+    :param light_curve_time_in_years: duration of the light curve to generate, in years
+    :param pixel_shift: offset of the SMBH with respect to the convolved map, in pixels
+    :param x_start_position: the x coordinate to start pulling a light curve from, in
+        pixels
+    :param y_start_position: the y coordinate to start pulling a light curve from, in
+        pixels
+    :param phi_travel_direction: the angular direction of travel along the convolution,
+        in degrees
+    :param return_track_coords: bool switch allowing a list of relevant positions to be
+        returned
+    :return: list representing the microlensing light curve positions
+    """
+    rng = np.random.default_rng(seed=random_seed)
+
+    if type(effective_transverse_velocity) == u.Quantity:
+        effective_transverse_velocity = effective_transverse_velocity.to(u.m / u.s)
+    else:
+        effective_transverse_velocity *= u.km.to(u.m)
+    if type(light_curve_time_in_years) == u.Quantity:
+        light_curve_time_in_years = light_curve_time_in_years.to(u.s)
+    else:
+        light_curve_time_in_years *= u.yr.to(u.s)
+
+    # check convolution if the map was large enough. Otherwise return original total flux.
+    # Note the convolution should be weighted by the square of the pixel shift to conserve flux.
+    # print(np.size(convolution_array,0)/2)
+    if pixel_shift >= np.size(convolution_array, 0) / 2:
+        print(
+            "warning, flux projection too large for this magnification map. Returning average flux."
+        )
+        return np.sum(convolution_array) / np.size(convolution_array)
+
+    # determine the path length of the light curve in the source plane and include endpoints
+    pixels_traversed = (
+        effective_transverse_velocity * light_curve_time_in_years / pixel_size
+    )
+
+    n_points = (
+        effective_transverse_velocity * light_curve_time_in_years / pixel_size
+    ) + 2
+
+    # ignore convolution artifacts
+    if pixel_shift > 0:
+        safe_convolution_array = convolution_array[
+            pixel_shift:-pixel_shift, pixel_shift:-pixel_shift
+        ]
+    else:
+        safe_convolution_array = convolution_array
+
+    # guarantee that we will be able to extract a light curve from the safe region for any random start point
+    if pixels_traversed >= np.size(safe_convolution_array, 0):
+        print(
+            "warning, light curve is too long for this magnification map. Returning average flux."
+        )
+        return np.sum(convolution_array) / np.size(convolution_array)
+
+    if x_start_position is not None:
+        if x_start_position < 0:
+            print(
+                "Warning, chosen position lays in the convolution artifact region. Returning average flux."
+            )
+            return np.sum(convolution_array) / np.size(convolution_array)
+    else:
+        x_start_position = rng.integers(0, np.size(safe_convolution_array, 0))
+
+    if y_start_position is not None:
+        if y_start_position < 0:
+            print(
+                "Warning, chosen position lays in the convolution artifact region. Returning average flux."
+            )
+            return np.sum(convolution_array) / np.size(convolution_array)
+    else:
+        y_start_position = rng.integers(0, np.size(safe_convolution_array, 1))
+
+    if phi_travel_direction is not None:
+        angle = phi_travel_direction * np.pi / 180
+        delta_x = pixels_traversed * np.cos(angle)
+        delta_y = pixels_traversed * np.sin(angle)
+
+        if (
+            x_start_position + delta_x >= np.size(safe_convolution_array, 0)
+            or y_start_position + delta_y >= np.size(safe_convolution_array, 1)
+            or x_start_position + delta_x < 0
+            or y_start_position + delta_y < 0
+        ):
+            print(
+                "Warning, chosen track leaves the convolution array. Returning average flux."
+            )
+            return np.sum(convolution_array) / np.size(convolution_array)
+    else:
+        # One quadrant will have enough space to extract the light curve
+        success = None
+        angle = rng.random() * 360 * np.pi / 180
+        while success is None:
+            angle += np.pi / 2
+            delta_x = pixels_traversed * np.cos(angle)
+            delta_y = pixels_traversed * np.sin(angle)
+            if (
+                x_start_position + delta_x < np.size(safe_convolution_array, 0)
+                and y_start_position + delta_y < np.size(safe_convolution_array, 1)
+                and x_start_position + delta_x >= 0
+                and y_start_position + delta_y >= 0
+            ):
+                break
+
+    # generate each (x, y) coordinate on the convolution
+    x_positions = np.linspace(
+        x_start_position, x_start_position + delta_x, int(n_points)
+    )
+    y_positions = np.linspace(
+        y_start_position, y_start_position + delta_y, int(n_points)
+    )
+    return (safe_convolution_array,
+            x_positions + pixel_shift,
+            y_positions + pixel_shift,
+        )
 
 
 def calculate_time_lag_array(
@@ -1444,14 +1581,17 @@ def generate_signal_from_psd(
     random_seed=None,
 ):
     """Generate a signal from any power spectrum using the methods of Timmer+.
+
     length_of_light_curve and frequencies must be recipricol units. the output light
-    curve will be normalized to have mean 0, std 1.
+    curve will be normalized to have mean 0, standard deviation 1. Thanks @ Joshua Fagin
+    for assistance on writing this function. Thanks at James H.H. Chan and the rest of
+    the FutureLens group for discussions.
 
     :param length_of_light_curve: maximum length of the light curve to generate. Note that this maximum
         value is dependent on the input frequencies, since the frequencies can only generate a light
         curve ranging from values between the Nyquist frequency [1/(2 * max(frequency))] and 1/min(frequency)
-    :param power_spectrum: the input power spectrum of the stochastic signal at each fourier frequency
-        defined in the frequencies parameter.
+    :param power_spectrum: array representing the input power spectrum of the stochastic signal at each
+        fourier frequency defined in the frequencies parameter.
     :param frequencies: the input fourier frequencies associated with the power spectrum. Note these should be
         defined in linear space as:
         np.linspace(1/length_of_light_curve, 1/(2 * desired_time_resolution), int(length_of_light_curve)+1)
@@ -1459,6 +1599,8 @@ def generate_signal_from_psd(
     :return: signal generated from the power spectrum ith length defined by length_of_light_curve.
     """
     rng = np.random.default_rng(seed=random_seed)
+
+    observations_per_day = 2 * np.max(frequencies)
 
     random_phases = 2 * np.pi * rng.random(size=len(frequencies))
 
@@ -1471,16 +1613,21 @@ def generate_signal_from_psd(
         )
     )
 
-    light_curve = np.fft.ifft(fourier_transform_of_output)[: int(length_of_light_curve)]
+    light_curve = np.fft.ifft(fourier_transform_of_output)[
+        : int(length_of_light_curve * observations_per_day)
+    ]
 
     light_curve -= np.mean(light_curve)
+
+    time_axis = np.linspace(0, length_of_light_curve - 1, len(light_curve))
 
     if np.std(light_curve) > 0:
         light_curve /= np.std(light_curve)
 
-    return light_curve.real
+    return time_axis, light_curve.real
 
 
+import matplotlib.pyplot as plt
 def generate_snapshots_of_radiation_pattern(
     rest_wavelength_in_nm,
     time_stamps,
@@ -1569,8 +1716,14 @@ def generate_snapshots_of_radiation_pattern(
     # define a burn in such that the whole disk is being driven at t=0
     burn_in_time = maximum_time_lag_in_days
     accretion_disk_mask = temp_array > 0
-
+    first_static_part = ((1 - driving_signal_fractional_strength) * static_flux * accretion_disk_mask)
+    second_static_part = (driving_signal_fractional_strength * response_array * accretion_disk_mask)
     list_of_snapshots = []
+    # driving_signal + [zeropoint -- > mean static flux]
+    # driving_signal has average amplitude version 
+    # if you do things correctly: SF_inf = 0.3 mag; quasar which unlensed mag of 21 vs 25
+    driving_signal = driving_signal * np.mean(static_flux)
+    # print(np.mean(driving_signal))
     # prepare snapshots
     for time in time_stamps:
         array_of_time_stamps = (
@@ -1583,8 +1736,7 @@ def generate_snapshots_of_radiation_pattern(
             * response_array
             * accretion_disk_mask
         )
-    return list_of_snapshots
-
+    return np.array(list_of_snapshots)
 
 def project_blr_to_source_plane(
     blr_density_rz_grid,
