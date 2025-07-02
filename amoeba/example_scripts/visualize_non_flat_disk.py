@@ -5,8 +5,8 @@ from amoeba.Util.util import calculate_geometric_disk_factor, convert_cartesian_
 res = 1000
 max_r = 100
 
-r_offset = 00
-phi_offset = 70
+r_offset = 10
+phi_offset = 180
 
 
 radii = np.linspace(-max_r, max_r, res)

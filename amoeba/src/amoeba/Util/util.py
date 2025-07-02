@@ -915,16 +915,24 @@ def perform_microlensing_convolution(
         return flux_array_rescaled
 
     dummy_map = np.zeros(np.shape(magnification_array))
-    dummy_map[: np.size(flux_array_rescaled, 0), : np.size(flux_array_rescaled, 1)] = (
-        flux_array_rescaled
+    if np.size(flux_array_rescaled, 0) < np.size(dummy_map, 0):
+        dummy_map[: np.size(flux_array_rescaled, 0), : np.size(flux_array_rescaled, 1)] = (
+            flux_array_rescaled
+        )
+    else:
+        print("magnification map not large enough to perform convolution")
+        return np.ones(np.shape(dummy_map)), 0
+    convolution = fft.irfft2(
+        fft.rfft2(
+            dummy_map, s=np.shape(dummy_map)
+        ) * fft.rfft2(
+            magnification_array, s=np.shape(magnification_array)
+        ), s=np.shape(magnification_array)
     )
-    convolution = fft.irfft2(fft.rfft2(dummy_map) * fft.rfft2(magnification_array))
 
     pixel_shift = np.size(flux_array_rescaled, 0) // 2
 
-    output = convolution.real
-
-    return output, pixel_shift
+    return convolution.real, pixel_shift
 
 
 def extract_light_curve(

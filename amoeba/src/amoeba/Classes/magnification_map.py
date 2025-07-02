@@ -101,7 +101,7 @@ class MagnificationMap:
         self.pixel_shift = 0
 
     def convolve_with_flux_projection(
-        self, FluxProjection, relative_orientation=False, random_seed=None
+        self, FluxProjection, relative_orientation=0, random_seed=None
     ):
         """Prepare the convolution between this magnification map and a FluxProjection.
         Note that once the convolution is performed, all orientations are defined. In
@@ -321,7 +321,7 @@ class ConvolvedMap(MagnificationMap):
         )
         self.mean_microlens_mass_in_kg = magnification_map.mean_microlens_mass_in_kg
         self.resolution = magnification_map.resolution
-        self.magnification_array = output_convolution
+        self.magnification_array = output_convolution * projected_flux_distribution.pixel_size**2
         self.pixel_shift = pixel_shift
         self.macro_magnification = magnification_map.macro_magnification
         self.redshift_lens = magnification_map.redshift_lens
