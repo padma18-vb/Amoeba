@@ -618,6 +618,7 @@ def test_conversions_between_cartesian_and_polar():
 
 def test_perform_microlensing_convolution():
     magnification_array_identity = np.ones((100, 100))
+    too_small_array = np.ones((3, 3))
     x_ax = 5 - abs(5 - np.linspace(1, 10, 10))
     flux_x, flux_y = np.meshgrid(x_ax, x_ax)
     sample_flux_map = (flux_x**2 + flux_y**2) ** 0.5
@@ -687,6 +688,16 @@ def test_perform_microlensing_convolution():
 
     total_value = np.sum(convolution_2_points)
     npt.assert_almost_equal(total_value, 1)
+
+    convolution_2smol, px_shift_2smol = perform_microlensing_convolution(
+        too_small_array,
+        sample_flux_map,
+        redshift_l,
+        redshift_s,
+        relative_orientation=None,
+    )
+
+    assert px_shift_2smol == 0
 
 
 def test_extract_light_curve():
@@ -1346,6 +1357,27 @@ def test_calculate_microlensed_transfer_function():
         relative_orientation=orientation_2,
         return_magnification_map_crop=True,
     )
+
+    random_rotated_crop_data = calculate_microlensed_transfer_function(
+        magnification_array_identity,
+        redshift_l,
+        redshift_s,
+        test_wavelength,
+        temp_array,
+        radii_array,
+        phi_array,
+        g_array,
+        inclination_angle,
+        smbh_mass_exponent,
+        corona_height,
+        mean_microlens_mass_in_kg=mean_microlens_mass_in_kg,
+        number_of_microlens_einstein_radii=number_of_microlens_einstein_radii,
+        number_of_smbh_gravitational_radii=1000,
+        relative_orientation=None,
+        return_magnification_map_crop=True,
+    )
+
+    assert np.shape(random_rotated_crop_data) == np.shape(crop_data)
 
 
 def test_generate_drw_signal():

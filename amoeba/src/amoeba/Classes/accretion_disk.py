@@ -122,12 +122,8 @@ class AccretionDisk:
         total_redshift_factor = redshift_factor * self.g_array
         rest_frame_wavelength = total_redshift_factor * observer_frame_wavelength_in_nm
 
-        output = (
-            np.nan_to_num(
-                planck_law(self.temp_array, rest_frame_wavelength)
-                * pow(self.g_array, 4.0)
-            )
-            * self.pixel_size**2
+        output = np.nan_to_num(
+            planck_law(self.temp_array, rest_frame_wavelength) * pow(self.g_array, 4.0)
         )
         if return_wavelengths == True:
             return output, rest_frame_wavelength

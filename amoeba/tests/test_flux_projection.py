@@ -286,6 +286,28 @@ def test_add_flux_projection():
 
     assert my_big_gaussian_projection.add_flux_projection(my_gaussian_projection_1)
 
+    my_big_gaussian_projection = FluxProjection(
+        flux_map_big,
+        observer_frame_wavelength_in_nm_2,
+        smbh_mass_exp,
+        redshift_source,
+        big_r_out_in_gravitational_radii,
+        inclination_angle,
+        OmM=0.3,
+        H0=70,
+    )
+    my_gaussian_projection_1 = FluxProjection(
+        flux_map,
+        observer_frame_wavelength_in_nm,
+        smbh_mass_exp,
+        redshift_source,
+        r_out_in_gravitational_radii,
+        inclination_angle,
+        OmM=0.3,
+        H0=70,
+    )
+    assert my_big_gaussian_projection.add_flux_projection(my_gaussian_projection_1)
+
 
 def test_get_plotting_axes():
     x_vals = np.linspace(-100, 100, 201)

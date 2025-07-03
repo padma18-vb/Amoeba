@@ -321,7 +321,9 @@ class ConvolvedMap(MagnificationMap):
         )
         self.mean_microlens_mass_in_kg = magnification_map.mean_microlens_mass_in_kg
         self.resolution = magnification_map.resolution
-        self.magnification_array = output_convolution * projected_flux_distribution.pixel_size**2
+        self.magnification_array = (
+            output_convolution * projected_flux_distribution.pixel_size**2
+        )
         self.pixel_shift = pixel_shift
         self.macro_magnification = magnification_map.macro_magnification
         self.redshift_lens = magnification_map.redshift_lens

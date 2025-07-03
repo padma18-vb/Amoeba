@@ -281,7 +281,7 @@ def visualization_pipeline(
                 else:
                     print(f"{item} not recognized")
             if len(successful_filters) == 0:
-                print("no filters loaded, no propagation required")
+                print("no filters loaded, no visualization required")
                 return False
             current_filters = successful_filters
 
@@ -329,7 +329,7 @@ def visualization_pipeline(
 
     if len(AGN.components.keys()) == 0:
         print(
-            "please add at least one coponent model to this agn. You cannot project nothing!"
+            "please add at least one component model to this agn. You cannot project nothing!"
         )
         return False
 
@@ -343,20 +343,19 @@ def visualization_pipeline(
             list_of_projections.append(current_img)
 
             reference_flux = current_img.total_flux
+            reference_px_size = current_img.pixel_size
 
         if "diffuse_continuum" in AGN.components.keys():
             current_img = AGN.components[
                 "diffuse_continuum"
             ].get_diffuse_continuum_emission(wavelength)
+            current_img.total_flux *= reference_flux
+            current_img.flux_array *= current_img.total_flux / np.sum(
+                current_img.flux_array * current_img.pixel_size**2
+            )
             list_of_projections.append(current_img)
 
-            current_flux = current_img.total_flux
-
-            if AGN.components["diffuse_continuum"].emissivity_etas is not None:
-                emissivity = AGN.components[
-                    "diffuse_continuum"
-                ].interpolate_spectrum_to_wavelength(wavelength)
-                current_img.flux_array *= emissivity * reference_flux / current_flux
+        output_blr_projection = None
 
         if len(AGN.blr_indicies) > 0:
 
@@ -370,23 +369,26 @@ def visualization_pipeline(
                 )
 
                 if current_projection.total_flux > 0:
-                    current_projection.flux_array *= (
-                        AGN.components["blr_" + str(index)].line_strength
-                        * reference_flux
-                        / current_projection.total_flux
-                    )
+
                     current_projection.total_flux *= (
                         AGN.components["blr_" + str(index)].line_strength
                         * reference_flux
                         / current_projection.total_flux
                     )
+                    current_projection.flux_array *= current_projection.total_flux / (
+                        np.sum(
+                            current_projection.flux_array
+                            * current_projection.pixel_size**2
+                        )
+                    )
 
-                if kk == 0:
-                    output_blr_projection = current_projection
-                else:
-                    output_blr_projection.add_flux_projection(current_projection)
+                    if output_blr_projection is None:
+                        output_blr_projection = current_projection
+                    else:
+                        output_blr_projection.add_flux_projection(current_projection)
 
-            list_of_projections.append(output_blr_projection)
+            if output_blr_projection is not None:
+                list_of_projections.append(output_blr_projection)
         list_of_wavelength_resolved_projections.append(list_of_projections)
     if return_components:
         return list_of_wavelength_resolved_projections
@@ -395,7 +397,6 @@ def visualization_pipeline(
     for list_of_projections in list_of_wavelength_resolved_projections:
         output_projections.append(list_of_projections[0])
         for jj in range(len(list_of_projections) - 1):
-            index = jj + 1
-            output_projections[-1].add_flux_projection(list_of_projections[index])
+            output_projections[-1].add_flux_projection(list_of_projections[jj + 1])
 
     return output_projections
