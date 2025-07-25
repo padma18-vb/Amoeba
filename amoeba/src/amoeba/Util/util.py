@@ -1926,8 +1926,11 @@ def calculate_blr_transfer_function(
     Todo: this is a relatively slow function. If there's a way to project the BLR into the
     3-dimensional cylindrical grid faster then compute the time lags as a function of
     (R, Z, phi) and take a single histogram over the whole space, that would probably
-    speed it up significantly. It sped up by reducing the resolution of the blr transfer
-    function, but still could be faster
+    speed it up significantly. Notes: It sped up by reducing the resolution of the blr transfer
+    function, but still could be faster. Additional note: I tried generating the 3d space
+    using a 3 dimensional grid, but it was actually slower than looping through each
+    height slab. It's possible it was slower due to the significant RAM required and
+    my testing Macbook was using swap-files to handle the task. Still requires further testing.
 
     :param blr_density_rz_grid: a 2d array of values representing the density of the blr
         at each point in (R, Z) coords.

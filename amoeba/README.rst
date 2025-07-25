@@ -98,7 +98,7 @@ requires a representation of the 2-dimensional magnification map generated from 
 microlens' Einstein radius is calculated, angular diameter distances are computed, and flux distributions and magnification maps
 are convolved to provide microlensing light curves of each source.
 
-Some precomputed ray tracings may be found `here <https://drive.google.com/drive/folders/1vx8HUBXw6SaDq5uS4jQCyWdg13XfCRCv?usp=share_link>`_
+Some precomputed ray tracings may be found `here <https://drive.google.com/file/d/1WGuzCXMKXwSawcfF8LE1gQTc042pzz_2/view?usp=share_link>`_
 which contains a zipped folder of .fits files for various inclination angles of Schwarzschild black holes.
 
 More explicit use cases may be found at the `ReadTheDocs <https://amoeba.readthedocs.io/en/latest/?version=latest>`_ .
