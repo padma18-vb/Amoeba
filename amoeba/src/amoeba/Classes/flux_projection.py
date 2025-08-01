@@ -103,6 +103,11 @@ class FluxProjection:
             [self.pixel_size / self.rg, SecondProjection.pixel_size / self.rg]
         )
 
+        expected_total_flux = self.total_flux + SecondProjection.total_flux
+        current_flux_from_arrays = np.sum(
+            self.flux_array * self.pixel_size**2
+        ) + np.sum(SecondProjection.flux_array * SecondProjection.pixel_size**2)
+
         working_flux_projection = SecondProjection.flux_array.copy()
 
         self_resolution_ratio = (self.pixel_size / self.rg) / desired_pixel_size_in_rg

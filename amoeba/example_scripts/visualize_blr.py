@@ -31,7 +31,7 @@ outer_launch_angle = 70  # deg
 maximum_blr_height = 1000  # rg
 characteristic_distance = 500  # in rg, for outflowing velocity model
 asymptotic_poloidal_velocity = 0.5  # units v / c
-height_step = 10  # rg, defines thickness of each blr slab
+height_step = 5  # rg, defines thickness of each blr slab
 radial_step = 10  # rg, defines resolution of each slab
 
 blr_rest_frame_emission = 500  # nm
