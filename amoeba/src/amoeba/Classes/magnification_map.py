@@ -153,6 +153,8 @@ class MagnificationMap:
         phi_travel_direction=None,
         weight_by_macromag=False,
         return_track_coords=False,
+        return_sub_grids=False,
+        grid_length=10,
         random_seed=None,
     ):
         """Calculate the values of a light curve. By default, the light curve will be
@@ -188,6 +190,8 @@ class MagnificationMap:
             y_start_position=y_start_position,
             phi_travel_direction=phi_travel_direction,
             return_track_coords=return_track_coords,
+            return_sub_grids=return_sub_grids,
+            grid_length=grid_length,
             random_seed=random_seed,
         )
         if weight_by_macromag:
@@ -215,6 +219,7 @@ class MagnificationMap:
         return_response_array_and_lags=False,
         return_descaled_response_array_and_lags=False,
         random_seed=None,
+        disk_tf = None,
     ):
         """Calculate the transfer function of an accretion disk when the response map is
         microlensed at a particular location.
@@ -279,6 +284,7 @@ class MagnificationMap:
             return_response_array_and_lags=return_response_array_and_lags,
             return_descaled_response_array_and_lags=return_descaled_response_array_and_lags,
             random_seed=random_seed,
+            disk_tf=disk_tf
         )
 
 
