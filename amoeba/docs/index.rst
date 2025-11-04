@@ -1,6 +1,3 @@
-Welcome to Amoeba's documentation!
-======================================
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

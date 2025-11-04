@@ -141,11 +141,11 @@ def create_maps(
                 if error.value():
                     continue
                 P = sim5.geodesic_find_midplane_crossing(gd, 0)
-                if isnan(P):
+                if np.isnan(P):
                     continue
                 r = sim5.geodesic_position_rad(gd, P)
                 pol = sim5.geodesic_position_pol(gd, P)
-                if isnan(r):
+                if np.isnan(r):
                     continue
                 if r >= convert_spin_to_isco_radius(spin):
                     phi = (
@@ -243,7 +243,6 @@ def convert_eddington_ratio_to_accreted_mass(
     accretion rate in physical units assuming bol_lum = eddington_ratio * edd_lum.
 
     The following equations hold:
-
         edd_lum = 4 * pi * G * M * M_proton * c / (sigma_T)
         bol_lum = M_dot * c^2 * efficiency
 
@@ -251,7 +250,6 @@ def convert_eddington_ratio_to_accreted_mass(
         M_dot = edd_lum / (efficiency * c^2)
 
     where:
-
         edd_lum = Eddingtion luminosity (the maximum luminosity allowed by Bondi
             accretion where the gravitational force is balanced by the radiation pressure
         pi = 3.14...
@@ -268,10 +266,11 @@ def convert_eddington_ratio_to_accreted_mass(
 
     :param mass_in_solar_masses: mass of SMBH in solar masses or astropy quantity. Note this is NOT smbh_mass_exp!
     :param eddington_ratio: percentage of theoretical Bondi limit of accretion rate
-    :param efficiency: conversion efficiency between gravitational potential energy and
-        thermal energy
+    :param efficiency: conversion efficiency between gravitational potential energy and thermal energy
+
     :return: accreted mass as astropy units
     """
+
     if type(mass_in_solar_masses) != u.Quantity:
         mass_in_solar_masses *= const.M_sun.to(u.kg)
     edd_lum = (
@@ -297,14 +296,12 @@ def accretion_disk_temperature(
     generic_beta=False,
 ):
     """Defines the radial temperature profile of the accretion disk according to the
-    function given in Best et al. 2024, which combines a viscous temperature profile
+    function given in Best et al. 2025, which combines a viscous temperature profile
     with the irradiated disk profile and the disk + wind profile. The viscous
     temperature profile may be defined as a Shakura-Sunyaev or Novikov-Thorne profile.
     Future: update to allow any user-defined radial temperature profile.
 
-    Note that parameters are categorized by thermal profile type (viscous, irradiated, wind).
 
-    ----- Thin disk ------
     :param radius_in_meters: radius or list of radii in meters
     :param min_radius_in_meters: inner radius in meters. Typically taken to be the innermost stable
         circular orbit, but may be greater than this if the truncated accretion disk model is used
@@ -320,8 +317,6 @@ def accretion_disk_temperature(
         as "SS" or "NT", respectively. Thanks @ Joshua Fagin for coding the Novikov-Thorne profile.
     :param efficiency: efficiency of converting gravitational potential energy into radiation. Typical
         values are ~0.1, and may be as large as ~0.42 for maximally spinning black holes.
-
-    ----- Irradiated disk ------
     :param corona_height: The height of the irradiating source in gravitational radii in the lamppost
         geometry (Cacket et al. 2007). The default value of 6 represents the Schwarzschild ISCO case.
     :param albedo: reflection coefficent of the accretion disk such that 0
@@ -331,8 +326,6 @@ def accretion_disk_temperature(
     :param eta_x_rays: efficiency coefficient of lamppost source, defined as Lx = eta_x_rays * L_bol.
         Due to conservation of energy, the sum of eta_x_rays and efficiency should NOT exceed 1,
         since the total energy must come from some physical source.
-
-    ----- Disk + wind ------
     :param beta: wind strength providing the following accretion rate relationship
         m_dot = m0_dot * (r / r_in)^beta from Sun et al. 2018. Note that this can greatly increase
         the total radiated energy and the Eddington ratio is no longer conserved.
@@ -400,43 +393,6 @@ def accretion_disk_temperature(
         x2 = 2 * np.cos((np.arccos(spin) + np.pi) / 3)
         x3 = -2 * np.cos(np.arccos(spin) / 3)
 
-        """
-        F_NT = (
-            1.0
-            / (x**7 - 3 * x**5 + 2 * spin * x**4)
-            * (
-                x
-                - x0
-                - (3.0 / 2.0) * spin * np.log(x / x0)
-                - 3
-                * (x1 - spin) ** 2
-                / (x1 * (x1 - x2) * (x1 - x3))
-                * np.log((x - x1) / (x0 - x1))
-                - 3
-                * (x2 - spin) ** 2
-                / (x2 * (x2 - x1) * (x2 - x3))
-                * np.log((x - x2) / (x0 - x2))
-                - 3
-                * (x3 - spin) ** 2
-                / (x3 * (x3 - x1) * (x3 - x2))
-                * np.log((x - x3) / (x0 - x3))
-            )
-        )
-        
-        temp_map = (
-            (
-                (
-                    3
-                    * disk_acc
-                    * const.c**6
-                    / (8 * np.pi * const.G**2 * mass_in_solar_masses**2)
-                )
-                * F_NT
-                / const.sigma_sb
-            )
-            ** (0.25)
-        ).value
-        """
         F_NT = (
             (1 + spin * x**-3) / (x * (1 - 3 * x**-2 + 2 * spin * x**-3) ** (1 / 2))
         ) * (
@@ -809,14 +765,9 @@ def pull_subarray_from_grid(array_2d, x_position, y_position, x_length, y_length
         rows = top_left_coords[:, 0].reshape(-1, 1, 1) + row_offsets  # shape (n, h, 1)
         cols = top_left_coords[:, 1].reshape(-1, 1, 1) + col_offsets  # shape (n, 1, w)
 
-        # Use advanced indexing to extract subarrays
+        # Use indexing to extract subarrays
         result = array_padded[rows, cols]
         return result
-        # print(x_start_padded)
-        # print(x_end_padded) 
-        # print(y_start_padded)
-        # print(y_end_padded)
-        # return array_padded[x_start_padded:x_end_padded, y_start_padded:y_end_padded]
 
 
 def pull_value_from_grid(array_2d, x_position, y_position):
@@ -1021,16 +972,22 @@ def perform_microlensing_convolution(
         return flux_array_rescaled
     # print(flux_array.shape, np.size(flux_array_rescaled, 0), np.shape(magnification_array))
     dummy_map = np.zeros(np.shape(magnification_array))
-    dummy_map[: np.size(flux_array_rescaled, 0), : np.size(flux_array_rescaled, 1)] = (
-        flux_array_rescaled
+    if np.size(flux_array_rescaled, 0) < np.size(dummy_map, 0):
+        dummy_map[
+            : np.size(flux_array_rescaled, 0), : np.size(flux_array_rescaled, 1)
+        ] = flux_array_rescaled
+    else:
+        print("magnification map not large enough to perform convolution")
+        return np.ones(np.shape(dummy_map)), 0
+    convolution = fft.irfft2(
+        fft.rfft2(dummy_map, s=np.shape(dummy_map))
+        * fft.rfft2(magnification_array, s=np.shape(magnification_array)),
+        s=np.shape(magnification_array),
     )
-    convolution = fft.irfft2(fft.rfft2(dummy_map) * fft.rfft2(magnification_array))
 
     pixel_shift = np.size(flux_array_rescaled, 0) // 2
 
-    output = convolution.real
-
-    return output, pixel_shift
+    return convolution.real, pixel_shift
 
 
 def extract_light_curve(
@@ -1148,6 +1105,7 @@ def extract_light_curve(
             return np.sum(convolution_array) / np.size(convolution_array)
     else:
         success = None
+        backup_counter = 0
         angle = rng.random() * 360 * np.pi / 180
         while success is None:
             angle += np.pi / 2
@@ -1160,12 +1118,15 @@ def extract_light_curve(
                 and y_start_position + delta_y >= 0
             ):
                 success = True
+            backup_counter += 1
+            if backup_counter > 4:  # pragma: no cover
+                break
 
     x_positions = np.linspace(
-        x_start_position, x_start_position + delta_x, int(n_points)
+        x_start_position, x_start_position + delta_x, 5 * int(n_points)
     )
     y_positions = np.linspace(
-        y_start_position, y_start_position + delta_y, int(n_points)
+        y_start_position, y_start_position + delta_y, 5 * int(n_points)
     )
     if return_sub_grids:
         light_curve = pull_subarray_from_grid(safe_convolution_array, x_positions, y_positions, grid_length, grid_length)
@@ -1434,25 +1395,26 @@ def calculate_geometric_disk_factor(
 
     gravitational_radius = calculate_gravitational_radius(10**smbh_mass_exp)
 
-    height_gradient_x, height_gradient_y = np.gradient(height_array)
-    radii_gradient_x, radii_gradient_y = np.gradient(new_radii)
+    height_gradient_y, height_gradient_x = np.gradient(height_array)
 
-    dh_dr = (
-        (height_gradient_x / radii_gradient_x) ** 2
-        + (height_gradient_y / radii_gradient_y) ** 2
-    ) ** 0.5
+    mod_dist = (x_array**2 + y_array**2 + height_array**2) ** 0.5
 
-    theta_star = np.pi - np.arctan(dh_dr) - np.arctan2(height_array, new_radii)
+    mod_grad = (height_gradient_x**2 + height_gradient_y**2 + 1) ** 0.5
 
-    theta_star = abs(theta_star % (np.pi))
+    cos_vector_angle_of_incidence = (
+        -height_array / mod_dist * 1 / mod_grad
+        + x_array / mod_dist * height_gradient_x / mod_grad
+        + y_array / mod_dist * height_gradient_y / mod_grad
+    )
 
-    cos_theta_star = np.cos(theta_star)
+    mask = cos_vector_angle_of_incidence < 0
+    cos_vector_angle_of_incidence[mask] = 0
 
     radii_star = (new_radii**2 + height_array**2) ** 0.5 * gravitational_radius
 
     return np.nan_to_num(
         (1 - albedo_array)
-        * cos_theta_star
+        * cos_vector_angle_of_incidence
         / (4 * np.pi * const.sigma_sb * radii_star**2)
     )
 
@@ -1602,13 +1564,13 @@ def calculate_microlensed_transfer_function(
     redshift_lens,
     redshift_source,
     rest_wavelength_in_nm,
-    temp_array,
-    radii_array,
-    phi_array,
-    g_array,
-    inclination_angle,
-    smbh_mass_exp,
-    corona_height,
+    temp_array=None,
+    radii_array=None,
+    phi_array=None,
+    g_array=None,
+    inclination_angle=None,
+    smbh_mass_exp=None,
+    corona_height=None,
     mean_microlens_mass_in_kg=1.0 * const.M_sun.to(u.kg),
     number_of_microlens_einstein_radii=25,
     number_of_smbh_gravitational_radii=1000,
@@ -1625,13 +1587,15 @@ def calculate_microlensed_transfer_function(
     return_descaled_response_array_and_lags=False,
     return_magnification_map_crop=False,
     random_seed=None,
+    response_array=None,
+    time_lag_array=None,
 ):
     """Calculate the transfer function assuming the response of the disk can be
     amplified by microlensing. Essentially this is done by calculating the response and
     time lag maps of the accretion disk, determining the scale ratio between sizes in
     the source plane, rescaling the accretion disk's arrays to the resolution of the
     magnification map, weighting each pixel by its corresponding magnification, then
-    computing the transfer function.
+    computing the transfer function. Extended to allow for response arrays of BLR.
 
     :param magnification_array: a 2d array of magnifications in the source plane
     :param redshift_lens: int/float representing the redshift of the lens
@@ -1654,6 +1618,8 @@ def calculate_microlensed_transfer_function(
     :param return_descaled_response_array_and_lags: boolean toggle to return a representation
         of the amplified response and time lags at the resolution of the magnification map.
         Also returns x and y positions of where the microlensing was assumed to take place.
+    :param return_magnification_map_crop: boolean toggle to return the section of the
+        magnification map which amplifies the response function.
     :param return_magnification_map_crop: boolean toggle to return the section of the
         magnification map which amplifies the response function.
     :param random_seed: random seed to use for reproducibility
@@ -1679,6 +1645,11 @@ def calculate_microlensed_transfer_function(
         flexability in disk model. Note that this is experimental!
     :param albedo_array: int, float, or array of albedos (reflectivities) to use for the
         disk
+    :param response_array: a 2d array representing the responsivity of the object. Must be
+        equal in shape to the time_lag_array. Calculated innately for accretion disk.
+    :param time_lag_array: a 2d array representing the time delay to each point on the
+        response_array. Must be equal in shape to response_array. Calculated innately for
+        accretion disk.
 
     :return: transfer function calculated assuming the response of the disk is amplified
         by the magnification_array
@@ -1687,25 +1658,29 @@ def calculate_microlensed_transfer_function(
 
     assert redshift_lens != redshift_source
 
-    disk_response_array, time_lag_array = construct_accretion_disk_transfer_function(
-        rest_wavelength_in_nm,
-        temp_array,
-        radii_array,
-        phi_array,
-        g_array,
-        inclination_angle,
-        smbh_mass_exp,
-        corona_height,
-        axis_offset_in_gravitational_radii=axis_offset_in_gravitational_radii,
-        angle_offset_in_degrees=angle_offset_in_degrees,
-        height_array=height_array,
-        albedo_array=albedo_array,
-        return_response_array_and_lags=True,
-    )
+    if response_array is None and time_lag_array is None:
+
+        response_array, time_lag_array = construct_accretion_disk_transfer_function(
+            rest_wavelength_in_nm,
+            temp_array,
+            radii_array,
+            phi_array,
+            g_array,
+            inclination_angle,
+            smbh_mass_exp,
+            corona_height,
+            axis_offset_in_gravitational_radii=axis_offset_in_gravitational_radii,
+            angle_offset_in_degrees=angle_offset_in_degrees,
+            height_array=height_array,
+            albedo_array=albedo_array,
+            return_response_array_and_lags=True,
+        )
+
+    assert np.shape(response_array) == np.shape(time_lag_array)
 
     rescaled_response_array = perform_microlensing_convolution(
         magnification_array,
-        disk_response_array,
+        response_array,
         redshift_lens,
         redshift_source,
         smbh_mass_exp=smbh_mass_exp,
@@ -1718,7 +1693,7 @@ def calculate_microlensed_transfer_function(
         return_preconvolution_information=True,
     )
 
-    scale_ratio = np.size(rescaled_response_array, 0) / np.size(disk_response_array, 0)
+    scale_ratio = np.size(rescaled_response_array, 0) / np.size(response_array, 0)
 
     rescaled_time_lag_array = rescale(time_lag_array, scale_ratio)
     assert np.shape(rescaled_time_lag_array) == np.shape(rescaled_response_array)
@@ -1726,8 +1701,15 @@ def calculate_microlensed_transfer_function(
     pixel_shift = np.size(rescaled_time_lag_array, 0) // 2
 
     magnification_array_padded = np.pad(magnification_array, pixel_shift, mode="edge")
+    magnification_array_padded = np.pad(magnification_array, pixel_shift, mode="edge")
 
     if x_position is None:
+        x_position = int(
+            rng.random()
+            * (np.size(magnification_array, 0) - np.size(rescaled_response_array, 0))
+            + pixel_shift
+        )
+
         x_position = int(
             rng.random()
             * (np.size(magnification_array, 0) - np.size(rescaled_response_array, 0))
@@ -1941,6 +1923,13 @@ def calculate_microlensed_transfer_function(
     ]
 
     if return_magnification_map_crop:
+        np.random.seed(random_seed)
+        if not isinstance(relative_orientation, (int, float)):
+            relative_orientation = np.random.rand() * 360
+
+        magnification_crop = rotate(
+            magnification_crop, -relative_orientation, axes=(0, 1), reshape=False
+        )
         return magnification_crop
 
     magnified_response_array = rescaled_response_array * magnification_crop
@@ -1982,217 +1971,6 @@ def calculate_microlensed_transfer_function(
         microlensed_transfer_function / np.sum(microlensed_transfer_function)
     )
 
-# def calculate_microlensed_transfer_function(
-#     magnification_array,
-#     redshift_lens,
-#     redshift_source,
-#     rest_wavelength_in_nm,
-#     temp_array,
-#     radii_array,
-#     phi_array,
-#     g_array,
-#     inclination_angle,
-#     smbh_mass_exp,
-#     corona_height,
-#     mean_microlens_mass_in_kg=1.0 * const.M_sun.to(u.kg),
-#     number_of_microlens_einstein_radii=25,
-#     number_of_smbh_gravitational_radii=1000,
-#     relative_orientation=0,
-#     OmM=0.3,
-#     H0=70,
-#     axis_offset_in_gravitational_radii=0,
-#     angle_offset_in_degrees=0,
-#     height_array=None,
-#     albedo_array=None,
-#     x_position=None,
-#     y_position=None,
-#     return_response_array_and_lags=False,
-#     return_descaled_response_array_and_lags=False,
-#     random_seed=None,
-# ):
-#     """Calculate the transfer function assuming the response of the disk can be
-#     amplified by microlensing. Essentially this is done by calculating the response and
-#     time lag maps of the accretion disk, determining the scale ratio between sizes in
-#     the source plane, rescaling the accretion disk's arrays to the resolution of the
-#     magnification map, weighting each pixel by its corresponding magnification, then
-#     computing the transfer function.
-
-#     ----- microlensing params -----
-#     :param magnification_array: a 2d array of magnifications in the source plane
-#     :param redshift_lens: int/float representing the redshift of the lens
-#     :param redshift_source: int/float representing the redshift of the source
-#     :param mean_microlens_mass_in_kg: average mass of the microlensing objects in
-#         kg. Typical values range from 0.1 to 1.0 M_sun.
-#     :param number_of_microlens_einstein_radii: number of R_e the magnification map
-#         covers along one edge.
-#     :param relative_orientation: orientation of the accretion disk w.r.t. the
-#         magnification map
-#     :param OmM: mass contribution to the energy budget of the universe
-#     :param H0: Hubble constant in units km/s/Mpc
-#     :param x_position: an optional x coordinate location to use on the magnification
-#         map. Otherwise, will be chosen randomly
-#     :param y_position: an optional y coordinate location to use on the magnification
-#         map. Otherwise, will be chosen randomly
-#     :param return_response_array_and_lags: boolean toggle to return a representation of the
-#         amplified response and time lags before the caluclation of the transfer function.
-#         Also returns x and y positions of where the microlensing was assumed to take place.
-#     :param return_descaled_response_array_and_lags: boolean toggle to return a representation
-#         of the amplified response and time lags at the resolution of the magnification map.
-#         Also returns x and y positions of where the microlensing was assumed to take place.
-#     :param random_seed: random seed to use for reproducibility
-
-#     ----- accretion disk params ------
-#     :param rest_wavelength_in_nm: rest frame wavelength in nanometers to calculate the
-#         transfer function at
-#     :param temp_array: a 2d array representing the effective temperatures of the
-#         accretion disk
-#     :param radii_array: a 2d array representing the radii of each pixel in the source
-#         plane with units of gravitational radii
-#     :param phi_array: a 2d array representing the azimuths of each pixel in the source
-#         plane in radians
-#     :param g_array: a 2d array representing the redshift factors due to relativistic
-#         effects.
-#     :param inclination_angle: inclination of the accretion disk w.r.t. the observer in
-#         degrees
-#     :param smbh_mass_exp: the solution of log10(m_smbh / m_sun)
-#     :param corona_height: height of the lamppost in gravitational radii
-#     :param number_of_smbh_gravitational_radii: maximum radius of the accretion disk in R_g
-#     :param axis_offset_in_gravitational_radii: the cylindrical radial offset of the
-#         irradiation source in gravitational radii
-#     :param angle_offset_in_degrees: the azimuth of the offset of the lamppost in degrees
-#     :param height_array: array of heights to calculate the disk at. Allows for greater
-#         flexability in disk model. Note that this is experimental!
-#     :param albedo_array: int, float, or array of albedos (reflectivities) to use for the
-#         disk
-
-#     :return: transfer function calculated assuming the response of the disk is amplified
-#         by the magnification_array
-#     """
-#     rng = np.random.default_rng(seed=random_seed)
-
-#     assert redshift_lens != redshift_source
-
-#     disk_response_array, time_lag_array = construct_accretion_disk_transfer_function(
-#         rest_wavelength_in_nm,
-#         temp_array,
-#         radii_array,
-#         phi_array,
-#         g_array,
-#         inclination_angle,
-#         smbh_mass_exp,
-#         corona_height,
-#         axis_offset_in_gravitational_radii=axis_offset_in_gravitational_radii,
-#         angle_offset_in_degrees=angle_offset_in_degrees,
-#         height_array=height_array,
-#         albedo_array=albedo_array,
-#         return_response_array_and_lags=True,
-#     )
-
-
-#     rescaled_response_array = perform_microlensing_convolution(
-#         magnification_array,
-#         disk_response_array,
-#         redshift_lens,
-#         redshift_source,
-#         smbh_mass_exp=smbh_mass_exp,
-#         mean_microlens_mass_in_kg=mean_microlens_mass_in_kg,
-#         number_of_microlens_einstein_radii=number_of_microlens_einstein_radii,
-#         number_of_smbh_gravitational_radii=number_of_smbh_gravitational_radii,
-#         relative_orientation=relative_orientation,
-#         OmM=OmM,
-#         H0=H0,
-#         return_preconvolution_information=True,
-#     )
-
-#     scale_ratio = np.size(rescaled_response_array, 0) / np.size(disk_response_array, 0)
-
-#     rescaled_time_lag_array = rescale(time_lag_array, scale_ratio)
-#     assert np.shape(rescaled_time_lag_array) == np.shape(rescaled_response_array)
-
-#     pixel_shift = np.size(rescaled_time_lag_array, 0) // 2
-
-#     magnification_array_padded = np.pad(
-#         magnification_array, pixel_shift, constant_values=(1, 1)
-#     )
-
-#     if x_position is None:
-#         x_position = int(rng.random() * np.size(magnification_array, 0))
-#     if y_position is None:
-#         y_position = int(rng.random() * np.size(magnification_array, 1))
-
-#     x_position += pixel_shift
-#     y_position += pixel_shift
-
-#     if isinstance(x_position, (list, np.ndarray)) and isinstance(y_position, (list, np.ndarray)):
-#         x_pos = np.asarray(x_position, dtype=int)
-#         y_pos = np.asarray(y_position, dtype=int)
-#         crop_size_x = np.size(rescaled_response_array, 0)
-#         crop_size_y = np.size(rescaled_response_array, 1)
-#         x_idx = x_pos[:, None] - pixel_shift + np.arange(crop_size_x)[None, :]
-#         y_idx = y_pos[:, None] - pixel_shift + np.arange(crop_size_y)[None, :]
-
-
-#         magnification_crop = magnification_array_padded[x_idx[:,:,None], y_idx[:,None,:]] # n x map crop x map crop i think
-    
-#     if isinstance(x_position, (int,float)):
-#         magnification_crop = magnification_array_padded[
-#             x_position
-#             - pixel_shift : x_position
-#             - pixel_shift
-#             + np.size(rescaled_response_array, 0),
-#             y_position
-#             - pixel_shift : y_position
-#             - pixel_shift
-#             + np.size(rescaled_response_array, 1),
-#         ]
-#         magnification_crop = magnification_crop[np.newaxis, :, :]
-#         # print(np.sum(magnification_crops[0]), np.sum(magnification_crop))
-
-#     # fig.colorbar(im2, ax=ax[2], fraction=1.0, pad=0.01)
-    
-#     # magnified_response_array = rescaled_response_array * magnification_crop
-#     # print(rescaled_response_array.shape, magnification_crop.shape, magnified_response_array.shape)
-#     if return_response_array_and_lags:
-#         return disk_response_array,time_lag_array,magnification_crop, rescaled_time_lag_array, x_idx, y_idx
-
-#     # unscaled_magnified_response_array = rescale(
-#     #     magnified_response_array, 1 / scale_ratio
-#     # )
-
-#     # descaling_factor = np.sum(rescaled_response_array) / np.sum(
-#     #     unscaled_magnified_response_array
-#     # )
-#     # unscaled_magnified_response_array *= descaling_factor
-
-#     # unscaled_magnified_response_array *= np.sum(magnified_response_array) / np.sum(
-#     #     unscaled_magnified_response_array
-#     # )
-#     # unscaled_time_lag_array = rescale(rescaled_time_lag_array, 1 / scale_ratio)
-
-#     # if return_descaled_response_array_and_lags:
-#     #     return (
-#     #         unscaled_magnified_response_array,
-#     #         unscaled_time_lag_array,
-#     #         x_position,
-#     #         y_position,
-#     #     )
-#     micro_tfs = []
-#     for i in range(magnified_response_array.shape[0]):
-#         micro_tf = np.histogram(
-#             rescale(rescaled_time_lag_array, 10),
-#             range=(0, np.max(rescaled_time_lag_array) + 1),
-#             bins=int(np.max(rescaled_time_lag_array) + 1),
-#             weights=np.nan_to_num(rescale(magnified_response_array[i], 10)),
-#             density=True,
-#         )[0]
-#         micro_tfs.append(micro_tf)
-#     micro_tfs = np.array(micro_tfs)
-#     print(micro_tfs.shape, np.sum(micro_tfs, axis=1)[None,:].shape)
-#     return magnification_crop, np.nan_to_num(
-#         micro_tfs.T/ np.sum(micro_tfs, axis=1)[None,:]
-#     )
-
-
 def generate_drw_signal(
     length_of_light_curve, time_step, sf_infinity, tau_drw, random_seed=None,normalize=False
 ):
@@ -2228,7 +2006,6 @@ def generate_drw_signal(
     output_drw /= np.std(output_drw)
 
     return output_drw
-
 
 def generate_signal_from_psd(
     length_of_light_curve,
@@ -2282,7 +2059,7 @@ def generate_signal_from_psd(
 
     return time_axis, light_curve_after_normalization.real, light_curve_real_before_normalization
 
-# COPIED 
+### This is taken from SLSim. Author: Henry Best.
 def generate_signal_from_generic_psd(
     length_of_light_curve,
     time_resolution,
@@ -2342,7 +2119,7 @@ def generate_signal_from_generic_psd(
     )
     return time_array, magnitude_array
 
-
+### This is taken from SLSim. Author: Henry Best.
 def define_bending_power_law_psd(
     log_breakpoint_frequency, low_frequency_slope, high_frequency_slope, frequencies
 ):
@@ -2376,7 +2153,7 @@ def define_bending_power_law_psd(
     ) ** -1
     return bending_power_law_psd
 
-
+### This is taken from SLSim. Author: Henry Best.
 def define_frequencies(length_of_light_curve, time_resolution):
     """This function defines the useful frequencies for generating a power
     spectrum density (PSD). Frequencies below the low frequency limit will not
@@ -2406,7 +2183,7 @@ def define_frequencies(length_of_light_curve, time_resolution):
     )
     return frequencies
 
-
+### This is taken from SLSim. Author: Henry Best.
 def normalize_light_curve(light_curve, mean_magnitude, standard_deviation=None):
     """This function takes in a light curve and redefines its mean and standard
     deviation. It may also be used to re-normalize any time series.
@@ -2432,7 +2209,7 @@ def normalize_light_curve(light_curve, mean_magnitude, standard_deviation=None):
     light_curve += mean_magnitude
     return light_curve
 
-
+### This is taken from SLSim. Author: Henry Best.
 def generate_signal(
     length_of_light_curve,
     time_resolution,
@@ -2520,29 +2297,9 @@ def generate_signal(
         : int(length_of_light_curve / time_resolution)
     ]
     if normal_magnitude_variance is False:
-        amplitude_baseline = magnitude_to_amplitude(mean_magnitude, zero_point_mag)
-        amplitude_value_1 = magnitude_to_amplitude(
-            mean_magnitude + standard_deviation, zero_point_mag
-        )
-        amplitude_value_2 = magnitude_to_amplitude(
-            mean_magnitude - standard_deviation, zero_point_mag
-        )
-
-        amplitude_variations = np.min(
-            (
-                abs(amplitude_value_1 - amplitude_baseline),
-                abs(amplitude_value_2 - amplitude_baseline),
-            )
-        )
-
-        intermediate_light_curve = normalize_light_curve(
-            generated_light_curve, amplitude_baseline, amplitude_variations
-        )
-        if any(intermediate_light_curve < 0):
-            raise ValueError("Warning: Amplitude variations greater than mean flux.")
-
-        output_light_curve = amplitude_to_magnitude(
-            intermediate_light_curve, zero_point_mag
+        raise NotImplementedError(
+            "normal_magnitude_variance=False is not supported. "
+            "Please set normal_magnitude_variance=True or implement flux-based variance handling."
         )
 
     else:
@@ -2668,7 +2425,6 @@ def generate_signal_from_generic_psd(
     )
     return time_array, magnitude_array
 
-import matplotlib.pyplot as plt
 def generate_snapshots_of_radiation_pattern(
     rest_wavelength_in_nm,
     time_stamps,
@@ -2916,15 +2672,30 @@ def calculate_blr_transfer_function(
     weighting_grid=None,
     radial_resolution=1,
     vertical_resolution=1,
+    magnification_array=None,
+    number_of_microlens_einstein_radii=25,
+    redshift_lens=None,
+    redshift_source=None,
+    mean_microlens_mass_in_kg=1 * const.M_sun.to(u.kg),
+    x_position=None,
+    y_position=None,
+    random_seed=None,
+    relative_orientation=0,
+    OmM=0.3,
+    H0=70,
 ):
     """Calculate the response function of the BLR by assuming weighting factors for some
     given wavelength range. The BLR emission is assumed to be proportional to the
     particle density and the weighting factor.
 
-    Todo: this is a very slow function. If there's a way to project the BLR into the
+    Todo: this is a relatively slow function. If there's a way to project the BLR into the
     3-dimensional cylindrical grid faster then compute the time lags as a function of
     (R, Z, phi) and take a single histogram over the whole space, that would probably
-    speed it up significantly. Figure out how to do this sometime!
+    speed it up significantly. Notes: It sped up by reducing the resolution of the blr transfer
+    function, but still could be faster. Additional note: I tried generating the 3d space
+    using a 3 dimensional grid, but it was actually slower than looping through each
+    height slab. It's possible it was slower due to the significant RAM required and
+    my testing Macbook was using swap-files to handle the task. Still requires further testing.
 
     :param blr_density_rz_grid: a 2d array of values representing the density of the blr
         at each point in (R, Z) coords.
@@ -2956,6 +2727,43 @@ def calculate_blr_transfer_function(
     if weighting_grid is None:
         weighting_grid = np.ones(np.shape(blr_density_rz_grid))
     assert np.shape(weighting_grid) == np.shape(blr_density_rz_grid)
+
+    if magnification_array is not None:
+
+        projection, max_projected_radius = project_blr_to_source_plane(
+            blr_density_rz_grid,
+            blr_vertical_velocity_grid,
+            blr_radial_velocity_grid,
+            inclination_angle,
+            smbh_mass_exp,
+            velocity_range=velocity_range,
+            weighting_grid=weighting_grid,
+            radial_resolution=radial_resolution,
+            vertical_resolution=vertical_resolution,
+        )
+
+        magnification_crop = calculate_microlensed_transfer_function(
+            magnification_array,
+            redshift_lens,
+            redshift_source,
+            1000,
+            smbh_mass_exp=smbh_mass_exp,
+            mean_microlens_mass_in_kg=mean_microlens_mass_in_kg,
+            number_of_microlens_einstein_radii=number_of_microlens_einstein_radii,
+            relative_orientation=relative_orientation,
+            OmM=OmM,
+            H0=H0,
+            x_position=x_position,
+            y_position=y_position,
+            number_of_smbh_gravitational_radii=max_projected_radius,
+            response_array=projection,
+            time_lag_array=projection,
+            return_magnification_map_crop=True,
+            random_seed=random_seed,
+        )
+
+    else:
+        magnification_crop = None
 
     x_coordinates = np.linspace(
         -np.size(blr_density_rz_grid, 0) * radial_resolution,
@@ -3037,6 +2845,13 @@ def calculate_blr_transfer_function(
             * weighting_grid[index_grid.astype(int), height]
         )
 
+        if magnification_crop is None:
+            magnification_crop = np.ones(np.shape(response_of_current_slab))
+
+        rescale_factor = np.size(response_of_current_slab, 0) / np.size(
+            magnification_crop, 0
+        )
+
         time_delays_of_current_slab = calculate_time_lag_array(
             R,
             Phi,
@@ -3046,6 +2861,11 @@ def calculate_blr_transfer_function(
             * height
             * vertical_resolution,
         )
+
+        response_of_current_slab = response_of_current_slab * rescale(
+            magnification_crop, rescale_factor
+        )
+        time_delays_of_current_slab = time_delays_of_current_slab
 
         transfer_function_of_slab = np.histogram(
             time_delays_of_current_slab,

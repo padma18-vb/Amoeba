@@ -160,8 +160,10 @@ class TestMagnificationMap:
             phi_travel_direction=phi_travel_direction,
         )
 
-        assert len(light_curve_rise_fall) >= 4
-        assert light_curve_rise_fall[2] > light_curve_rise_fall[0]
+        len_lc = len(light_curve_rise_fall)
+        assert len_lc > 4
+
+        assert light_curve_rise_fall[20] > light_curve_rise_fall[0]
 
         light_curve_macromag = self.magnification_map.pull_light_curve(
             effective_transverse_velocity,
@@ -302,8 +304,8 @@ class TestMagnificationMap:
             name="identity",
         )
 
-        wavelength_1 = 100
-        wavelength_2 = 300
+        wavelength_1 = 500
+        wavelength_2 = 800
 
         micro_tf_1_id = (
             self.identity_magnification_array.calculate_microlensed_transfer_function(

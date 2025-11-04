@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "amoeba-agn"
-version = "0.1.2"
+version = "0.2.1"
 description = "This package is designed to model agn variability self consistently across multiple models"
 readme = "README.rst"
 authors = [
@@ -21,7 +21,7 @@ classifiers = [
 ]
 license = {text = "MIT license"}
 dependencies = [
-  "astropy", "numpy", "scipy", "scikit-image", "speclite"
+  "astropy", "numpy", "scipy", "scikit-image", "speclite", "tqdm", "matplotlib"
 ]
 
 [project.optional-dependencies]
@@ -49,6 +49,15 @@ pythonpath = [
     ".", "src"
 ]
 
+[tool.coverage.report]
+fail-under = 98
+
+[tool.coverage.run]
+branch = true
+include = ["amoeba/src/*"]
+source = ["."]
+command_line = "-m unittest discover -s tests/"
+fail-under = 98
 
 
 # Mypy

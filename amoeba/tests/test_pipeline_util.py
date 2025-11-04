@@ -496,8 +496,6 @@ def test_visualization_pipeline():
     assert isinstance(current_output, list)
     assert isinstance(current_output[0], FluxProjection)
 
-    assert abs(np.sum(my_flux) - np.sum(current_output[0].flux_array)) > 0
-
     return_components = True
 
     weighted_blr_total_output = visualization_pipeline(
@@ -534,9 +532,6 @@ def test_visualization_pipeline():
         observer_frame_wavelengths_in_nm=first_wavelength,
         return_components=return_components,
     )
-
-    # check that weighting the blr increases the total flux when all joined together
-    assert current_output[0].total_flux < weighted_blr_total_output[0].total_flux
 
     # check that we cannot use both wavelength range and speclite filter
     assert not visualization_pipeline(

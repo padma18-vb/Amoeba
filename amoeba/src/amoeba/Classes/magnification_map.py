@@ -102,7 +102,7 @@ class MagnificationMap:
         self.pixel_shift = 0
 
     def convolve_with_flux_projection(
-        self, FluxProjection, relative_orientation=False, random_seed=None
+        self, FluxProjection, relative_orientation=0, random_seed=None
     ):
         """Prepare the convolution between this magnification map and a FluxProjection.
         Note that once the convolution is performed, all orientations are defined. In
@@ -218,6 +218,7 @@ class MagnificationMap:
         H0=70,
         return_response_array_and_lags=False,
         return_descaled_response_array_and_lags=False,
+        return_magnification_map_crop=False,
         random_seed=None,
         disk_tf = None,
     ):
@@ -246,6 +247,8 @@ class MagnificationMap:
         :param return_descaled_response_array_and_lags: Similar to above, but returns
             the projections at the resolution of the magnification map. Useful for
             debugging.
+        :param return_magnification_map_crop: Boolean used to return the region of
+            the magnification map used to amplify the response function.
         :param random_seed: allows the user to set a random seed for reproducibility
         :return: The microlensed transfer function represented by a list.
         """
@@ -283,6 +286,7 @@ class MagnificationMap:
             y_position=y_position,
             return_response_array_and_lags=return_response_array_and_lags,
             return_descaled_response_array_and_lags=return_descaled_response_array_and_lags,
+            return_magnification_map_crop=return_magnification_map_crop,
             random_seed=random_seed,
             disk_tf=disk_tf
         )
@@ -324,7 +328,9 @@ class ConvolvedMap(MagnificationMap):
         )
         self.mean_microlens_mass_in_kg = magnification_map.mean_microlens_mass_in_kg
         self.resolution = magnification_map.resolution
-        self.magnification_array = output_convolution
+        self.magnification_array = (
+            output_convolution * projected_flux_distribution.pixel_size**2
+        )
         self.pixel_shift = pixel_shift
         self.macro_magnification = magnification_map.macro_magnification
         self.redshift_lens = magnification_map.redshift_lens

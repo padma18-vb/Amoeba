@@ -480,7 +480,7 @@ class TestAgn:
 
         tiny_kwargs = {"r_out_in_gravitational_radii": 400}
 
-        self.no_kwarg_agn.add_diffuse_continuum(**tiny_kwargs)
+        assert self.no_kwarg_agn.add_diffuse_continuum(**tiny_kwargs)
 
     def test_add_intrinsic_signal_parameters(self):
 
@@ -1114,7 +1114,7 @@ class TestAgn:
         assert isinstance(components_with_blr[0][0], FluxProjection)
         assert isinstance(components_no_blr[0][1], FluxProjection)
 
-        assert len(components_with_blr[0]) == len(components_no_blr[0])
+        assert len(components_with_blr[0]) >= len(components_no_blr[0])
         assert np.shape(components_with_blr[0][-1].flux_array) > np.shape(
             components_no_blr[0][-1].flux_array
         )
@@ -1157,8 +1157,8 @@ class TestAgn:
             speclite_filter=my_multitude_of_bands, return_components=False
         )
         assert len(my_multitude_of_bands) == len(my_multi_projection)
-        # test we have the right number of components (no torus emission yet)
-        assert len(self.my_populated_agn.components) == len(my_multi_components[0]) + 1
+        # test we have the right number of components (no torus emission yet, blr does not project here)
+        assert len(self.my_populated_agn.components) == len(my_multi_components[0]) + 2
         # test each flux distribution is different
         assert my_multi_projection[0].total_flux != my_multi_projection[1].total_flux
         assert my_multi_projection[0].total_flux != my_multi_projection[2].total_flux

@@ -52,7 +52,8 @@ class AccretionDisk:
         :param g_array: a 2d representation of the g-factors (relativistic correction
             factors) on the accretion disk. Requires general relativistic ray tracing.
         :param radii_array: a 2d representation of the radii on the accretion disk, in
-            R_g = GM/c^2
+            R_g = GM/c^2. Note that these arrays represent the projection of the disk in
+            the plane of the sky.
         :param height_array: a 2d representation of the height of the accretion disk in
             units of R_g = GM/c^2
         :param spin: float representing the dimensionless spin component of the SMBH
@@ -126,12 +127,8 @@ class AccretionDisk:
         total_redshift_factor = redshift_factor * self.g_array
         rest_frame_wavelength = total_redshift_factor * observer_frame_wavelength_in_nm
 
-        output = (
-            np.nan_to_num(
-                planck_law(self.temp_array, rest_frame_wavelength)
-                * pow(self.g_array, 4.0)
-            )
-            * self.pixel_size**2
+        output = np.nan_to_num(
+            planck_law(self.temp_array, rest_frame_wavelength) * pow(self.g_array, 4.0)
         )
         if return_wavelengths == True:
             return output, rest_frame_wavelength

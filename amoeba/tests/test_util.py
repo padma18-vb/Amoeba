@@ -184,7 +184,6 @@ def test_accretion_disk_temperature():
         visc_temp_prof="SS",
     )
 
-    print("next: NT")
     temp_profile_NT = accretion_disk_temperature(
         radii_in_meters,
         min_radius_in_meters,
@@ -201,7 +200,6 @@ def test_accretion_disk_temperature():
         visc_temp_prof="NT",
     )
 
-    print("next: SS + wind")
     temp_profile_SS_wind = accretion_disk_temperature(
         radii_in_meters,
         min_radius_in_meters,
@@ -218,7 +216,6 @@ def test_accretion_disk_temperature():
         visc_temp_prof="SS",
     )
 
-    print("next: rejected, so SS + wind")
     temp_profile_rejected_profile = accretion_disk_temperature(
         radii_in_meters * u.m,
         min_radius_in_meters / 1000 * u.km,
@@ -234,7 +231,6 @@ def test_accretion_disk_temperature():
         spin=0,
         visc_temp_prof="Not_a_profile",
     )
-    print("this one below")
 
     temp_profile_little_accreted_mass = accretion_disk_temperature(
         radii_in_meters * u.m,
@@ -259,11 +255,11 @@ def test_accretion_disk_temperature():
     )
 
     # check that they're all different
-    assert abs(sum(temp_profile_SS - temp_profile_NT)) != 0
-    assert abs(sum(temp_profile_SS - temp_profile_SS_wind)) != 0
+    assert sum(abs(temp_profile_SS - temp_profile_NT)) != 0
+    assert sum(abs(temp_profile_SS - temp_profile_SS_wind)) != 0
 
     # check that the rejected profile defaulted to a SS profile
-    assert abs(sum(temp_profile_SS_wind - temp_profile_rejected_profile)) == 0
+    assert sum(abs(temp_profile_SS_wind - temp_profile_rejected_profile)) == 0
 
     assert np.sum(temp_profile_little_accreted_mass) < np.sum(temp_profile_SS)
     assert np.sum(temp_profile_little_accreted_mass) != 0
@@ -349,7 +345,7 @@ def test_calculate_angular_diameter_distance():
         astropy_cosmo.angular_diameter_distance(redshift).to(u.m).value
     )
 
-    # set tolerance to 0.5% due to quadrature integration and
+    # set tolerance to 0.2% due to quadrature integration and
     # rounding of constants
     tolerance = ang_diam_dist_astropy / 500
 
@@ -622,6 +618,7 @@ def test_conversions_between_cartesian_and_polar():
 
 def test_perform_microlensing_convolution():
     magnification_array_identity = np.ones((100, 100))
+    too_small_array = np.ones((3, 3))
     x_ax = 5 - abs(5 - np.linspace(1, 10, 10))
     flux_x, flux_y = np.meshgrid(x_ax, x_ax)
     sample_flux_map = (flux_x**2 + flux_y**2) ** 0.5
@@ -691,6 +688,16 @@ def test_perform_microlensing_convolution():
 
     total_value = np.sum(convolution_2_points)
     npt.assert_almost_equal(total_value, 1)
+
+    convolution_2smol, px_shift_2smol = perform_microlensing_convolution(
+        too_small_array,
+        sample_flux_map,
+        redshift_l,
+        redshift_s,
+        relative_orientation=None,
+    )
+
+    assert px_shift_2smol == 0
 
 
 def test_extract_light_curve():
@@ -1216,13 +1223,13 @@ def test_calculate_microlensed_transfer_function():
         albedo_array=albedo_array,
     )
 
-    magnification_array_identity = np.ones((100, 100))
+    magnification_array_identity = np.ones((1000, 1000))
 
     redshift_l = 0.5
     redshift_s = 2.0
     relative_orientation_1 = 0
     mean_microlens_mass_in_kg = 0.3 * const.M_sun.to(u.kg)
-    number_of_microlens_einstein_radii = 1
+    number_of_microlens_einstein_radii = 5
 
     orientation_1 = 0
     orientation_2 = 45
@@ -1330,6 +1337,47 @@ def test_calculate_microlensed_transfer_function():
     )
     assert len(descaled_data) == 4
     assert np.size(descaled_data[0]) == np.size(descaled_data[1])
+
+    # test the magnification crop
+    crop_data = calculate_microlensed_transfer_function(
+        magnification_array_identity,
+        redshift_l,
+        redshift_s,
+        test_wavelength,
+        temp_array,
+        radii_array,
+        phi_array,
+        g_array,
+        inclination_angle,
+        smbh_mass_exponent,
+        corona_height,
+        mean_microlens_mass_in_kg=mean_microlens_mass_in_kg,
+        number_of_microlens_einstein_radii=number_of_microlens_einstein_radii,
+        number_of_smbh_gravitational_radii=1000,
+        relative_orientation=orientation_2,
+        return_magnification_map_crop=True,
+    )
+
+    random_rotated_crop_data = calculate_microlensed_transfer_function(
+        magnification_array_identity,
+        redshift_l,
+        redshift_s,
+        test_wavelength,
+        temp_array,
+        radii_array,
+        phi_array,
+        g_array,
+        inclination_angle,
+        smbh_mass_exponent,
+        corona_height,
+        mean_microlens_mass_in_kg=mean_microlens_mass_in_kg,
+        number_of_microlens_einstein_radii=number_of_microlens_einstein_radii,
+        number_of_smbh_gravitational_radii=1000,
+        relative_orientation=None,
+        return_magnification_map_crop=True,
+    )
+
+    assert np.shape(random_rotated_crop_data) == np.shape(crop_data)
 
 
 def test_generate_drw_signal():
@@ -1734,6 +1782,8 @@ def test_calculate_blr_transfer_function():
     max_radius = 100
     max_height = 100
 
+    test_magnifications_unit = np.ones((1000, 1000))
+
     r_points = 20
     z_points = 10
 
@@ -1843,6 +1893,9 @@ def test_calculate_blr_transfer_function():
         weighting_grid=None,
         radial_resolution=r_step,
         vertical_resolution=z_step,
+        redshift_lens=1,
+        redshift_source=2,
+        magnification_array=test_magnifications_unit,
     )
 
     mean_response_2 = np.sum(tau_ax * face_on_blr_tf_2)
