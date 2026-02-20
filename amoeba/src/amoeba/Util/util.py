@@ -2499,9 +2499,12 @@ def generate_snapshots_of_radiation_pattern(
 
     time_lag_array *= gr_per_day
     maximum_time_lag_in_days = np.max(time_lag_array)
+    # print('response_array: ', response_array.sum())
+    # print('total_static_flux: ', total_static_flux)
+    # print('total driving signal: ', np.sum(driving_signal))
 
     # scale_by_this = total_static_flux/np.sum(driving_signal)
-
+    response_array *=  np.sum(driving_signal)
     # response_array *= total_static_flux / np.sum(response_array)
     # unnormalized flux
     # driving_signal = (1 + scale * driving_signal) * np.mean(static_flux)
@@ -2517,7 +2520,6 @@ def generate_snapshots_of_radiation_pattern(
 
     burn_in_time = maximum_time_lag_in_days
     accretion_disk_mask = temp_array > 1000
-    
     list_of_snapshots = []
     for time in time_stamps:
         array_of_time_stamps = (
@@ -2530,6 +2532,7 @@ def generate_snapshots_of_radiation_pattern(
             * response_array
             * accretion_disk_mask
         )
+    # print('snapshot 0: ',np.array(list_of_snapshots[0]).sum())
     return np.array(list_of_snapshots), time_lag_array
 
 def project_blr_to_source_plane(
