@@ -733,8 +733,8 @@ def pull_subarray_from_grid(array_2d, x_position, y_position, x_length, y_length
         :param y_length: Side length in y direction (int).
         :return: 2D numpy array of shape (x_length, y_length).
         """
-        x_position = x_position.astype(int)
-        y_position = y_position.astype(int)
+        x_position = np.rint(x_position).astype(int)
+        y_position = np.rint(y_position).astype(int)
         x_length = int(x_length)
         y_length = int(y_length)
 
@@ -754,9 +754,9 @@ def pull_subarray_from_grid(array_2d, x_position, y_position, x_length, y_length
         array_padded = np.pad(array_2d, ((pad_x_before, pad_x_after), (pad_y_before, pad_y_after)), mode="edge")
 
         x_start_padded = x_start + pad_x_before
-        x_end_padded = x_end + pad_x_before
+        # x_end_padded = x_end + pad_x_before
         y_start_padded = y_start + pad_y_before
-        y_end_padded = y_end + pad_y_before
+        # y_end_padded = y_end + pad_y_before
         top_left_coords = np.vstack((x_start_padded, y_start_padded)).T
         row_offsets = np.arange(x_length).reshape(1, -1, 1)  # shape (1, h, 1)
         col_offsets = np.arange(y_length).reshape(1, 1, -1)  # shape (1, 1, w)
